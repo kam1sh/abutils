@@ -11,7 +11,9 @@ from datetime import datetime
 
 # DOOMx64_2016_05_17_14_21_03_678.jpg
 # -> [DOOMx64, 2016_05_17_14_21_03_678]
-PATTERN = re.compile(r'([^_]+)_([^.]+)')
+# Heat_Signature_2019_07_20_17_17_30_462.jpg
+# -> [Hest_Signature, ...]
+PATTERN = re.compile(r'(.+)_((\d+_){6}\d+)')
 
 
 parser = argparse.ArgumentParser(description='Screenshots sorter')
@@ -21,6 +23,7 @@ parser.add_argument(
     help='Directory with screenshots')
 parser.add_argument('--log-level', default='info', help='Logging level')
 
+log = logging.getLogger(__name__)
 
 def ispic(path: Path) -> bool:
     """
@@ -29,6 +32,20 @@ def ispic(path: Path) -> bool:
     # path.suffix -> '.jpg'
     # path.suffix[1:] -> 'jpg
     return path.suffix[1:].upper() in {'PNG', 'JPG', 'GIF', 'JPEG', 'BMP'}
+
+def walk(dir: Path, depth: int):
+    log.debug("Current depth: %d", depth)
+    if depth < 1:
+        log.debug("Maximum depth reached!")
+        return
+    for file in dir.iterdir():
+        log.debug("Found file %s", file)
+        if file.is_dir():
+            log.info("It's a directory")
+            walk(file, depth=depth-1)
+        else:
+            log.info("Checking extension...")
+            fix_extension(file)
 
 def sort_screenshots(directory: Path, destination: Path = None) -> dict:
     """
